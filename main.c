@@ -223,6 +223,8 @@ int main (int argc, char *argv[])
         return 1;
     }
 
+    printf ("Total: %lu watches \n", total_handlers);
+
     while (1) {
         process_events (target);
     }
