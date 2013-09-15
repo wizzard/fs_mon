@@ -132,7 +132,7 @@ void process_events (const char *target)
          //   printf ("%s [%s]\n", action, pevent->name);
         }
         if (pevent->mask & IN_CLOSE_WRITE) {
-            printf ("opened for writing was closed: %s\n", pevent->name);
+            fprintf (stderr, "opened for writing was closed: %s\n", pevent->name);
         }
         if (pevent->mask & IN_CLOSE_NOWRITE) {
         //    strcat(action, " not opened for writing was closed");
@@ -150,9 +150,9 @@ void process_events (const char *target)
 
                 parent = kh_value(h, k);
                 if (!parent)
-                    printf ("OPS !!\n");
+                    fprintf (stderr, "OPS !!\n");
     
-                printf ("created in watched directory: wd: %d [%s] parent: %s\n", pevent->wd, pevent->name, parent);
+                fprintf (stderr, "created in watched directory: wd: %d [%s] parent: %s\n", pevent->wd, pevent->name, parent);
 
                 asprintf (&fname,"%s%s", parent, pevent->name);
 
@@ -166,12 +166,12 @@ void process_events (const char *target)
                     fprintf (stderr, "Failed to stat file: %s\n", fname);
                 }
             } else {
-                printf ("OPS, parent not found ! wd: %d created in watched directory: [%s]\n", pevent->wd, pevent->name);
+                fprintf (stderr, "OPS, parent not found ! wd: %d created in watched directory: [%s]\n", pevent->wd, pevent->name);
 
             }
         }
         if (pevent->mask & IN_DELETE) {
-            printf ("deleted from watched directory: %s\n", pevent->name);
+            fprintf (stderr, "deleted from watched directory: %s\n", pevent->name);
         }
         if (pevent->mask & IN_DELETE_SELF) {
             printf ("watched file/directory was itself deleted: %s\n", pevent->name);
@@ -215,7 +215,7 @@ int main (int argc, char *argv[])
 
     fd = inotify_init ();
     if (fd < 0) {
-        printf("inotify_init failed\n");
+        fprintf (stderr, "inotify_init failed\n");
         return 1;
     }
 
@@ -223,7 +223,8 @@ int main (int argc, char *argv[])
         return 1;
     }
 
-    printf ("Total: %lu watches \n", total_handlers);
+    fprintf (stderr, "Total: %lu watches \n", total_handlers);
+    fflush (stderr);
 
     while (1) {
         process_events (target);
