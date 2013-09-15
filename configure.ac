@@ -23,6 +23,7 @@ AC_CHECK_HEADER([sys/inotify.h],
 
 if test "x$have_inotify" = "no"; then 
   AC_MSG_ERROR("inotify not found!") 
+  exit 1;
 fi 
 
 # check if we should enable verbose debugging 
