@@ -66,7 +66,7 @@ int scan_dir (const char *dir_path)
 
     wd = inotify_add_watch (fd, cur_path, IN_ALL_EVENTS);
     if (wd < 0) {
-        fprintf (stderr, "add_watch failed\n");
+        fprintf (stderr, "add_watch failed. So far: %lu watches added \n", total_handlers);
         return -1;
     }
     total_handlers++;
