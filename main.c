@@ -34,7 +34,7 @@ static long unsigned int total_handlers = 0;
 KHASH_MAP_INIT_INT(h32, char*)
 static khash_t(h32) *h;
 static FAMConnection fc;
-staic int global_wd = 0;
+static int global_wd = 0;
 
 #define REPORT_EACH 1000
 
