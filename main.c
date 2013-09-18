@@ -26,16 +26,16 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 
-#include <sys/inotify.h>
+#include <fam.h>
 
 #include "khash.h"
 
 static long unsigned int total_handlers = 0;
 KHASH_MAP_INIT_INT(h32, char*)
 static khash_t(h32) *h;
+static FAMConnection fc;
 
 #define REPORT_EACH 1000
-#define BUFF_SIZE ((sizeof(struct inotify_event) + FILENAME_MAX)*1024)
 
 static int fd;
 
@@ -51,6 +51,7 @@ int scan_dir (const char *dir_path)
     int wd;
     khiter_t k;
     int ret;
+    FAMRequest fr;
 
     dir = opendir (dir_path);
     if (!dir) {
@@ -64,21 +65,21 @@ int scan_dir (const char *dir_path)
 		cur_path = (char *)dir_path;
 	}
 
-    wd = inotify_add_watch (fd, cur_path, IN_ALL_EVENTS);
+    wd = FAMMonitorDirectory (&fc, cur_path, &fr, NULL);
     if (wd < 0) {
         fprintf (stderr, "add_watch failed. So far: %lu watches added \n", total_handlers);
         return -1;
     }
     total_handlers++;
-
+/*
     k = kh_put(h32, h, wd, &ret);
     if (!ret) {
         fprintf (stderr, "Hash error !\n");
         return -1;
     }
 
-    kh_value(h, k) = strdup (cur_path);
-
+    kh_value(h, k) = &fr;
+*/
     if (total_handlers % REPORT_EACH == 0) {
         fprintf (stderr, "So far: %lu watches added\n", total_handlers);
     }
@@ -113,8 +114,39 @@ int scan_dir (const char *dir_path)
     return 0;
 }
 
-void process_events (const char *target)
+void process_events (FAMEvent* fe)
 {
+    if (showReqIDs) printf("req %d: ", fe->fr.reqnum);
+    switch (fe->code) {
+	case FAMExists:
+	    printf("%s Exists\n", fe->filename);
+	    break;
+	case FAMEndExist:
+	    printf("%s EndExist\n", fe->filename);
+	    break;
+	case FAMChanged:
+	    printf("%s Changed\n", fe->filename);
+	    break;
+	case FAMDeleted:
+	    printf("%s was deleted\n", fe->filename);
+	    break;
+	case FAMStartExecuting:
+	    printf("%s started executing\n", fe->filename);
+	    break;
+	case FAMStopExecuting:
+	    printf("%s stopped executing\n", fe->filename);
+	    break;
+	case FAMCreated:
+	    printf("%s was created\n", fe->filename);
+	    break;
+	case FAMMoved:
+	    printf("%s was moved\n", fe->filename);
+	    break;
+	default:
+	    printf("(unknown event %d on %s)\n", fe->code, fe->filename);
+    }
+
+    /*
     ssize_t len, i = 0;
     char buff[BUFF_SIZE] = {0};
 
@@ -198,10 +230,13 @@ void process_events (const char *target)
         i += sizeof(struct inotify_event) + pevent->len;
     }
 }
+*/
 
 int main (int argc, char *argv[])
 {
     char target[FILENAME_MAX];
+    int fd;
+    FAMEvent fe;
 
     if (argc < 2) {
         fprintf (stderr, "Watching the current directory\n");
@@ -213,9 +248,9 @@ int main (int argc, char *argv[])
 
     h = kh_init(h32);
 
-    fd = inotify_init ();
+    fd = FAMOpen2 (&fc, argv[0]);
     if (fd < 0) {
-        fprintf (stderr, "inotify_init failed\n");
+        fprintf (stderr, "FAM init failed\n");
         return 1;
     }
 
@@ -226,9 +261,15 @@ int main (int argc, char *argv[])
     fprintf (stderr, "Total: %lu watches \n", total_handlers);
     fflush (stderr);
 
-    while (1) {
-        process_events (target);
-    }
+    for (; FAMPending (&fc); ) {
+        if (FAMNextEvent (&fc, &fe) < 0) {
+            printf (stderr, "FAMNextEvent() returned < 0!\n");
+            exit (1);
+        }
+	    processDirEvents (&fe);
+        fflush (stdout);
+	}
+
 
     kh_destroy(h32, h);
 
