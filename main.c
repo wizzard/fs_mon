@@ -135,9 +135,9 @@ void process_events (FAMEvent* fe)
             if (!parent)
                 fprintf (stderr, "OPS !!\n");
 
-            fprintf (stderr, "created in watched directory: wd: %d [%s] parent: %s\n", pevent->wd, pevent->name, parent);
+            fprintf (stderr, "created in watched directory: wd: %d [%s] parent: %s\n", wd, fe->filename, parent);
 
-            asprintf (&fname,"%s%s", parent, pevent->name);
+            asprintf (&fname,"%s%s", parent, fe->filename);
 
             if (lstat (fname, &st) != -1) {
 
@@ -149,7 +149,7 @@ void process_events (FAMEvent* fe)
                 fprintf (stderr, "Failed to stat file: %s\n", fname);
             }
         } else {
-            fprintf (stderr, "OPS, parent not found ! wd: %d created in watched directory: [%s]\n", pevent->wd, pevent->name);
+            fprintf (stderr, "OPS, parent not found ! wd: %d created in watched directory: [%s]\n", wd, fe->filename);
 
         }
     }
