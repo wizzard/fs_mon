@@ -266,7 +266,7 @@ int main (int argc, char *argv[])
             printf (stderr, "FAMNextEvent() returned < 0!\n");
             exit (1);
         }
-	    processDirEvents (&fe);
+	    process_events (&fe);
         fflush (stdout);
 	}
 
