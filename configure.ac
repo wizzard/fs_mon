@@ -16,9 +16,22 @@ AC_C_CONST
 AC_C_INLINE
 AC_LANG(C)
 
-AC_CHECK_HEADER(fam.h, :, :)
-AC_CHECK_LIB(fam, FAMOpen, ,)
-AC_SUBST(LIBFAM)
+AC_ARG_WITH([fam],
+			[  --with-fam=<path>      prefix of fam installation (eg /usr/local)],
+		[case "${withval}" in
+			  yes) with_fam="/usr";;
+			  no)  with_fam="no";;
+			  *)   with_fam="/usr";;
+			 esac],
+			 [with_fam="/usr"])
+
+if test x$with_fam != xno; then
+	CPPFLAGS="$CPPFLAGS -I $with_fam/include"
+	LDFLAGS="$LDFLAGS -L $with_fam/lib"
+	AC_CHECK_HEADERS(fam.h,
+					 AC_SEARCH_LIBS([FAMOpen], [fam]),
+					 AC_MSG_WARN([*** fam.h not found -- consider using --with-fam]))
+fi
 
 # check if we should enable verbose debugging 
 AC_ARG_ENABLE(debug-mode,
