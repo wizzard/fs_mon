@@ -116,7 +116,7 @@ int scan_dir (const char *dir_path)
 
 void process_events (FAMEvent* fe)
 {
-    if (showReqIDs) printf("req %d: ", fe->fr.reqnum);
+    printf("req %d: ", fe->fr.reqnum);
     switch (fe->code) {
 	case FAMExists:
 	    printf("%s Exists\n", fe->filename);
