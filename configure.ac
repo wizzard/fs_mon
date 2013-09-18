@@ -16,15 +16,9 @@ AC_C_CONST
 AC_C_INLINE
 AC_LANG(C)
 
-# Checks for header files.
-AC_CHECK_HEADER([sys/inotify.h], 
-                [AC_CHECK_FUNC([inotify_init],[have_inotify="yes"],[have_inotify="no"])], 
-                [have_inotify="no"]) 
-
-if test "x$have_inotify" = "no"; then 
-  AC_MSG_ERROR("inotify not found!") 
-  exit 1;
-fi 
+AC_CHECK_HEADER(fam.h, :, :)
+AC_CHECK_LIB(fam, FAMOpen, ,)
+AC_SUBST(LIBFAM)
 
 # check if we should enable verbose debugging 
 AC_ARG_ENABLE(debug-mode,
