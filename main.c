@@ -71,15 +71,15 @@ int scan_dir (const char *dir_path)
         return -1;
     }
     total_handlers++;
-/*
+    
     k = kh_put(h32, h, wd, &ret);
     if (!ret) {
         fprintf (stderr, "Hash error !\n");
         return -1;
     }
 
-    kh_value(h, k) = &fr;
-*/
+    kh_value(h, k) = strdup (cur_path);
+    
     if (total_handlers % REPORT_EACH == 0) {
         fprintf (stderr, "So far: %lu watches added\n", total_handlers);
     }
@@ -116,121 +116,39 @@ int scan_dir (const char *dir_path)
 
 void process_events (FAMEvent* fe)
 {
-    printf("req %d: ", fe->fr.reqnum);
-    switch (fe->code) {
-	case FAMExists:
-	    printf("%s Exists\n", fe->filename);
-	    break;
-	case FAMEndExist:
-	    printf("%s EndExist\n", fe->filename);
-	    break;
-	case FAMChanged:
-	    printf("%s Changed\n", fe->filename);
-	    break;
-	case FAMDeleted:
-	    printf("%s was deleted\n", fe->filename);
-	    break;
-	case FAMStartExecuting:
-	    printf("%s started executing\n", fe->filename);
-	    break;
-	case FAMStopExecuting:
-	    printf("%s stopped executing\n", fe->filename);
-	    break;
-	case FAMCreated:
-	    printf("%s was created\n", fe->filename);
-	    break;
-	case FAMMoved:
-	    printf("%s was moved\n", fe->filename);
-	    break;
-	default:
-	    printf("(unknown event %d on %s)\n", fe->code, fe->filename);
-    }
-}
-    /*
-    ssize_t len, i = 0;
-    char buff[BUFF_SIZE] = {0};
+    if (fe->code == FAMCreated) {
+        char *parent = NULL;
+        khiter_t k;
 
-    len = read (fd, buff, BUFF_SIZE);
+        k = kh_get(h32, h, pevent->wd);
 
-    while (i < len) {
-        struct inotify_event *pevent = (struct inotify_event *)&buff[i];
+        if (k != kh_end(h)) {
+            char *fname;
+            static struct stat st;
 
-        if (pevent->mask & IN_ACCESS) {
-         //   strcat(action, " was read");
-         //   printf ("%s [%s]\n", action, pevent->name);
-        }
-        if (pevent->mask & IN_ATTRIB) {
-          //  strcat(action, " Metadata changed");
-         //   printf ("%s [%s]\n", action, pevent->name);
-        }
-        if (pevent->mask & IN_CLOSE_WRITE) {
-            fprintf (stderr, "opened for writing was closed: %s\n", pevent->name);
-        }
-        if (pevent->mask & IN_CLOSE_NOWRITE) {
-        //    strcat(action, " not opened for writing was closed");
-        //    printf ("%s [%s]\n", action, pevent->name);
-        }
-        if (pevent->mask & IN_CREATE) {
-            char *parent = NULL;
-            khiter_t k;
+            parent = kh_value(h, k);
+            if (!parent)
+                fprintf (stderr, "OPS !!\n");
 
-            k = kh_get(h32, h, pevent->wd);
+            fprintf (stderr, "created in watched directory: wd: %d [%s] parent: %s\n", pevent->wd, pevent->name, parent);
 
-            if (k != kh_end(h)) {
-                char *fname;
-                static struct stat st;
+            asprintf (&fname,"%s%s", parent, pevent->name);
 
-                parent = kh_value(h, k);
-                if (!parent)
-                    fprintf (stderr, "OPS !!\n");
-    
-                fprintf (stderr, "created in watched directory: wd: %d [%s] parent: %s\n", pevent->wd, pevent->name, parent);
+            if (lstat (fname, &st) != -1) {
 
-                asprintf (&fname,"%s%s", parent, pevent->name);
-
-                if (lstat (fname, &st) != -1) {
-
-                    if (S_ISDIR (st.st_mode) && !S_ISLNK (st.st_mode)) {
-                        scan_dir (fname);
-                    }
-
-                } else {
-                    fprintf (stderr, "Failed to stat file: %s\n", fname);
+                if (S_ISDIR (st.st_mode) && !S_ISLNK (st.st_mode)) {
+                    scan_dir (fname);
                 }
+
             } else {
-                fprintf (stderr, "OPS, parent not found ! wd: %d created in watched directory: [%s]\n", pevent->wd, pevent->name);
-
+                fprintf (stderr, "Failed to stat file: %s\n", fname);
             }
-        }
-        if (pevent->mask & IN_DELETE) {
-            fprintf (stderr, "deleted from watched directory: %s\n", pevent->name);
-        }
-        if (pevent->mask & IN_DELETE_SELF) {
-            printf ("watched file/directory was itself deleted: %s\n", pevent->name);
-            // XXX:
-        }
-        if (pevent->mask & IN_MODIFY) {
-        //    strcat(action, " was modified");
-        //    printf ("%s [%s]\n", action, pevent->name);
-        }
-        if (pevent->mask & IN_MOVE_SELF) {
-            printf ("watched file/directory was itself moved: %s\n", pevent->name);
-        }
-        if (pevent->mask & IN_MOVED_FROM) {
-            printf ("moved out of watched directory: %s\n", pevent->name);
-        }
-        if (pevent->mask & IN_MOVED_TO) {
-            printf ("moved into watched directory: %s\n", pevent->name);
-        }
-        if (pevent->mask & IN_OPEN) {
-        //    strcat(action, " was opened");
-        //    printf ("%s [%s]\n", action, pevent->name);
-        }
+        } else {
+            fprintf (stderr, "OPS, parent not found ! wd: %d created in watched directory: [%s]\n", pevent->wd, pevent->name);
 
-        i += sizeof(struct inotify_event) + pevent->len;
+        }
     }
 }
-*/
 
 int main (int argc, char *argv[])
 {
@@ -262,14 +180,15 @@ int main (int argc, char *argv[])
     fflush (stderr);
 
     while (1) {
-    res = FAMPending (&fc);
-    printf ("got %d events \n", res);
+        if (FAMPending (&fc) < 0) {
+            printf (stderr, "FAMPending() returned < 0!\n");
+            exit (1);
+        }
         if (FAMNextEvent (&fc, &fe) < 0) {
             printf (stderr, "FAMNextEvent() returned < 0!\n");
             exit (1);
         }
 	    process_events (&fe);
-        fflush (stdout);
 	}
 
 
