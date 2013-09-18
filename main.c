@@ -261,7 +261,9 @@ int main (int argc, char *argv[])
     fprintf (stderr, "Total: %lu watches \n", total_handlers);
     fflush (stderr);
 
-    for (; FAMPending (&fc); ) {
+    while (1) {
+    res = FAMPending (&fc);
+    printf ("got %d events \n", res);
         if (FAMNextEvent (&fc, &fe) < 0) {
             printf (stderr, "FAMNextEvent() returned < 0!\n");
             exit (1);
