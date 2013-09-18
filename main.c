@@ -34,6 +34,7 @@ static long unsigned int total_handlers = 0;
 KHASH_MAP_INIT_INT(h32, char*)
 static khash_t(h32) *h;
 static FAMConnection fc;
+staic int global_wd = 0;
 
 #define REPORT_EACH 1000
 
@@ -64,9 +65,11 @@ int scan_dir (const char *dir_path)
 	} else {
 		cur_path = (char *)dir_path;
 	}
+    global_wd++;
+    wd = global_wd;
 
-    wd = FAMMonitorDirectory (&fc, cur_path, &fr, NULL);
-    if (wd < 0) {
+    ret = FAMMonitorDirectory (&fc, cur_path, &fr, &wd);
+    if (ret < 0) {
         fprintf (stderr, "add_watch failed. So far: %lu watches added \n", total_handlers);
         return -1;
     }
@@ -119,8 +122,10 @@ void process_events (FAMEvent* fe)
     if (fe->code == FAMCreated) {
         char *parent = NULL;
         khiter_t k;
+        int wd;
 
-        k = kh_get(h32, h, pevent->wd);
+        *wd = (int *) fe->userdata;
+        k = kh_get(h32, h, wd);
 
         if (k != kh_end(h)) {
             char *fname;
