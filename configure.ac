@@ -26,11 +26,10 @@ AC_ARG_WITH([fam],
 			 [with_fam="/usr"])
 
 if test x$with_fam != xno; then
-	CPPFLAGS="$CPPFLAGS -I $with_fam/include"
+	CFLAGS="$CFLAGS -I $with_fam/include"
 	LDFLAGS="$LDFLAGS -L $with_fam/lib"
-	AC_CHECK_HEADERS(fam.h,
-					 AC_SEARCH_LIBS([FAMOpen], [fam]),
-					 AC_MSG_WARN([*** fam.h not found -- consider using --with-fam]))
+	AC_CHECK_HEADERS(fam.h, AC_SEARCH_LIBS([FAMOpen], [fam]),
+        AC_MSG_WARN([*** fam.h not found -- consider using --with-fam]))
 fi
 
 # check if we should enable verbose debugging 
