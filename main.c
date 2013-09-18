@@ -68,7 +68,7 @@ int scan_dir (const char *dir_path)
     global_wd++;
     wd = global_wd;
 
-    ret = FAMMonitorDirectory (&fc, cur_path, &fr, &wd);
+    ret = FAMMonitorDirectory (&fc, cur_path, &fr, (void *)wd);
     if (ret < 0) {
         fprintf (stderr, "add_watch failed. So far: %lu watches added \n", total_handlers);
         return -1;
@@ -84,7 +84,7 @@ int scan_dir (const char *dir_path)
     kh_value(h, k) = strdup (cur_path);
     
     if (total_handlers % REPORT_EACH == 0) {
-        fprintf (stderr, "So far: %lu watches added\n", total_handlers);
+        fprintf (stderr, "So far: %lu watches added, current wd: %d\n", total_handlers, wd);
     }
 
     ent = readdir (dir);
@@ -124,7 +124,7 @@ void process_events (FAMEvent* fe)
         khiter_t k;
         int wd;
 
-        *wd = (int *) fe->userdata;
+        wd = (int) fe->userdata;
         k = kh_get(h32, h, wd);
 
         if (k != kh_end(h)) {
