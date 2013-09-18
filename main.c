@@ -145,7 +145,7 @@ void process_events (FAMEvent* fe)
 	default:
 	    printf("(unknown event %d on %s)\n", fe->code, fe->filename);
     }
-
+}
     /*
     ssize_t len, i = 0;
     char buff[BUFF_SIZE] = {0};
