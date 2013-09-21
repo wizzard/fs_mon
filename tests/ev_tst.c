@@ -26,7 +26,7 @@ int main(void)
           0, 0);
 
    for (;;) {
-       nev = kevent(kq, &change, 1, &amp;event, 1, NULL);
+       nev = kevent(kq, &change, 1, &event, 1, NULL);
        if (nev == -1)
            perror("kevent");
        else if (nev > 0) {
