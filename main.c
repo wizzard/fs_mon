@@ -135,13 +135,14 @@ void process_events (FAMEvent* fe)
             if (!parent)
                 fprintf (stderr, "OPS !!\n");
 
-            fprintf (stderr, "created in watched directory: wd: %d [%s] parent: %s\n", wd, fe->filename, parent);
 
             asprintf (&fname,"%s%s", parent, fe->filename);
 
             if (lstat (fname, &st) != -1) {
 
                 if (S_ISDIR (st.st_mode) && !S_ISLNK (st.st_mode)) {
+
+                    fprintf (stderr, "created in watched directory: wd: %d [%s] parent: %s\n", wd, fe->filename, parent);
                     scan_dir (fname);
                 }
 

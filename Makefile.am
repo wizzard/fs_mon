@@ -1,3 +1,4 @@
+SUBDIRS=tests
 bin_PROGRAMS = fs_mon
 fs_mon_SOURCES = main.c
 
