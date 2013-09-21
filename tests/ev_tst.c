@@ -44,6 +44,7 @@ int main (int argc, char *argv[])
         return -1;
     }
 
+    event_add (ev, NULL);
     event_base_dispatch (evbase);
 
     return 0;
