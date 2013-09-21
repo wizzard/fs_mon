@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h> 
 
-int main(void)
+int main (int argc, char *argv[])
 {
    int f, kq, nev;
    struct kevent change;
@@ -17,7 +17,7 @@ int main(void)
    if (kq == -1)
        perror("kqueue");
 
-   f = open("/tmp/foo", O_RDONLY);
+   f = open(argv[1], O_RDONLY);
    if (f == -1)
        perror("open");
 
