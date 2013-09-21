@@ -1,10 +1,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>
+#include <stdio.h>
+#include <stdlib.h> 
 
 int main(void)
 {
@@ -44,5 +45,5 @@ int main(void)
 
    close(kq);
    close(f);
-   return EXIT_SUCCESS;
+   return 0;
 }
