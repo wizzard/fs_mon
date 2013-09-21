@@ -24,7 +24,7 @@ static void on_read (int fd, short event, void *arg)
 
 	len = read (fd, &ke, sizeof (struct kevent));
 
-    printf ("Read: %d bytes, id: %u\n", len, ke->ident);
+    printf ("Read: %d bytes, id: %u\n", len, ke.ident);
 
 }
 
