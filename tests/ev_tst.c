@@ -6,52 +6,43 @@
 #include <sys/event.h>
 #include <sys/time.h>
 
-#include <event2/event.h>
-#include <event2/listener.h>
-#include <event2/bufferevent.h>
-#include <event2/bufferevent_struct.h>
-#include <event2/buffer.h>
-#include <event2/dns.h>
-#include <event2/http.h>
-#include <event2/http_struct.h>
-
-static void on_read (int fd, short event, void *arg)
+int main(void)
 {
-    int len;
-    struct kevent ke;
+   int f, kq, nev;
+   struct kevent change;
+   struct kevent event;
 
-    printf ("On read !\n");
+   kq = kqueue();
+   if (kq == -1)
+       perror("kqueue");
 
-	len = read (fd, &ke, sizeof (struct kevent));
+   f = open("/tmp/foo", O_RDONLY);
+   if (f == -1)
+       perror("open");
 
-    printf ("Read: %d bytes, id: %u\n", len, ke.ident);
+   EV_SET(&change, f, EVFILT_VNODE,
+          EV_ADD | EV_ENABLE | EV_ONESHOT,
+          NOTE_DELETE | NOTE_EXTEND | NOTE_WRITE | NOTE_ATTRIB,
+          0, 0);
 
-}
+   for (;;) {
+       nev = kevent(kq, &change, 1, &amp;event, 1, NULL);
+       if (nev == -1)
+           perror("kevent");
+       else if (nev > 0) {
+           if (event.fflags & NOTE_DELETE) {
+               printf("File deleted\n");
+               break;
+           }
+           if (event.fflags & NOTE_EXTEND ||
+               event.fflags & NOTE_WRITE)
+               printf("File modified\n");
+           if (event.fflags & NOTE_ATTRIB)
+               printf("File attributes modified\n");
+       }
+   }
 
-int main (int argc, char *argv[])
-{
-    int fd;
-    struct event_base *evbase;
-    struct event *ev;
-
-    evbase = event_base_new ();
-
-    fd = open (argv[1], O_RDONLY);
-    if (fd < 0) {
-        printf ("Failed to open !\n");
-        return -1;
-    }
-    
-    printf ("method: %s, fd: %d \n", event_base_get_method (evbase), fd);
-    
-    ev = event_new (evbase, fd, EV_READ|EV_PERSIST, on_read, NULL);
-    if (!ev) {
-        printf ("Failed to create event !\n");
-        return -1;
-    }
-
-    event_add (ev, NULL);
-    event_base_dispatch (evbase);
-
-    return 0;
+   close(kq);
+   close(f);
+   return EXIT_SUCCESS;
 }
