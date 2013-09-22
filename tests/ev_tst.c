@@ -17,18 +17,21 @@ changed_cb (GFileMonitor      *monitor,
             GFileMonitorEvent  event,
             gpointer           data)
 {
+    if (other_file)
+        g_printf ("========== XXXXXXXXXXXXX\n");
+
     switch (event) {
         case G_FILE_MONITOR_EVENT_CHANGED:
-            g_printf ("Changed \n");
+            g_printf ("Changed: %s \n", g_file_get_path (file));
             break;
         case G_FILE_MONITOR_EVENT_DELETED:
-            g_printf ("event deleted \n");
+            g_printf ("event deleted: %s \n", g_file_get_path (file));
             break;
         case G_FILE_MONITOR_EVENT_CREATED:
-            g_printf ("event created \n");
+            g_printf ("event created: %s \n", g_file_get_path (file));
             break;
         case G_FILE_MONITOR_EVENT_ATTRIBUTE_CHANGED:
-            g_printf ("event changed \n");
+            g_printf ("event changed: %s \n", g_file_get_path (file));
             break;
     }
 }
