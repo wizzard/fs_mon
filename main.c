@@ -14,7 +14,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
-#define _GNU_SOURCE 1
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/resource.h>
@@ -44,12 +43,7 @@ static int fd;
 
 int scan_dir (const char *dir_path);
 
-static void
-dir_changed_cb (GFileMonitor      *monitor,
-            GFile             *file,
-            GFile             *other_file,
-            GFileMonitorEvent  event,
-            gpointer           data)
+static void dir_changed_cb (GFileMonitor *monitor, GFile *file, GFile *other_file, GFileMonitorEvent event, gpointer data)
 {
     switch (event) {
         case G_FILE_MONITOR_EVENT_CHANGED:
@@ -123,7 +117,7 @@ int scan_dir (const char *dir_path)
     }
 
 	if (dir_path[strlen (dir_path) - 1] != '/' ) {
-		asprintf (&cur_path, "%s/", dir_path);
+		cur_path = g_strdup_printf ("%s/", dir_path);
 	} else {
 		cur_path = (char *)dir_path;
 	}
@@ -150,7 +144,7 @@ int scan_dir (const char *dir_path)
     ent = readdir (dir);
     while (ent) {
         if ((strcmp (ent->d_name, ".")) && strcmp (ent->d_name, "..")) {
-            asprintf (&next_file,"%s%s", cur_path, ent->d_name);
+            next_file = g_strdup_printf ("%s%s", cur_path, ent->d_name);
 
             if (lstat (next_file, &st) == -1) {
                 fprintf (stderr, "Failed to stat file: %s\n", next_file);
@@ -158,21 +152,24 @@ int scan_dir (const char *dir_path)
             }
 
 			if (S_ISDIR (st.st_mode) && !S_ISLNK (st.st_mode)) {
-				free (next_file);
-				asprintf (&next_file,"%s%s/", cur_path, ent->d_name);
+				g_free (next_file);
+				next_file = g_strdup_printf ("%s%s/", cur_path, ent->d_name);
                 if (scan_dir (next_file) < 0) {
                     fprintf (stderr, "Aborting !\n");
                     return -1;
                 }
             }
 
-            free (next_file);
+            g_free (next_file);
         }
 
         ent = readdir (dir);
     }
 
     closedir (dir);
+
+    if (cur_path != dir_path)
+        g_free (cur_path);
 
     return 0;
 }
