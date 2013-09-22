@@ -112,7 +112,7 @@ int scan_dir (const char *dir_path)
 
     dir = opendir (dir_path);
     if (!dir) {
-        fprintf (stderr, "Can't open directory: %s\n", dir_path);
+        perror ("opendir: ");
         return -1;
     }
 
