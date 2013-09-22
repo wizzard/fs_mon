@@ -2,48 +2,52 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/types.h>
-#include <sys/event.h>
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h> 
 
+#include <glib.h>
+#include <gio/gio.h>
+
+
+static void
+changed_cb (GFileMonitor      *monitor,
+            GFile             *file,
+            GFile             *other_file,
+            GFileMonitorEvent  event,
+            gpointer           data)
+{
+    switch (event) {
+        case G_FILE_MONITOR_EVENT_CHANGED:
+            g_printf ("Changed \n");
+            break;
+        case G_FILE_MONITOR_EVENT_DELETED:
+            g_printf ("event deleted \n");
+            break;
+        case G_FILE_MONITOR_EVENT_CREATED:
+            g_printf ("event created \n");
+            break;
+        case G_FILE_MONITOR_EVENT_ATTRIBUTE_CHANGED:
+            g_printf ("event changed \n");
+            break;
+    }
+}
+
 int main (int argc, char *argv[])
 {
-   int f, kq, nev;
-   struct kevent change;
-   struct kevent event;
+  GFile *file;
+  GError *error = NULL;
+  GMainLoop *loop;
+  GFileMonitor *dir_monitor;
 
-   kq = kqueue();
-   if (kq == -1)
-       perror("kqueue");
+  file = g_file_new_for_path (argv[1]);
+  dir_monitor = g_file_monitor_directory (file, 0, NULL, &error);
 
-   f = open(argv[1], O_RDONLY);
-   if (f == -1)
-       perror("open");
+  loop = g_main_loop_new (NULL, FALSE);
 
-   EV_SET(&change, f, EVFILT_VNODE,
-          EV_ADD | EV_ENABLE | EV_ONESHOT,
-          NOTE_DELETE | NOTE_EXTEND | NOTE_WRITE | NOTE_ATTRIB,
-          0, 0);
+  g_signal_connect (dir_monitor, "changed", G_CALLBACK (changed_cb), NULL);
 
-   for (;;) {
-       nev = kevent(kq, &change, 1, &event, 1, NULL);
-       if (nev == -1)
-           perror("kevent");
-       else if (nev > 0) {
-           if (event.fflags & NOTE_DELETE) {
-               printf("File deleted\n");
-               break;
-           }
-           if (event.fflags & NOTE_EXTEND ||
-               event.fflags & NOTE_WRITE)
-               printf("File modified\n");
-           if (event.fflags & NOTE_ATTRIB)
-               printf("File attributes modified\n");
-       }
-   }
+  g_main_loop_run (loop);
 
-   close(kq);
-   close(f);
    return 0;
 }
