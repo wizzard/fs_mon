@@ -45,26 +45,32 @@ int scan_dir (const char *dir_path);
 
 static void dir_changed_cb (GFileMonitor *monitor, GFile *file, GFile *other_file, GFileMonitorEvent event, gpointer data)
 {
+    gchar *fname;
+
+    fname = g_file_get_path (file);
     switch (event) {
         case G_FILE_MONITOR_EVENT_CHANGED:
-            g_printf ("Changed: %s \n", g_file_get_path (file));
+            g_printf ("Changed: %s \n", fname);
             break;
         case G_FILE_MONITOR_EVENT_DELETED:
-            g_printf ("event deleted: %s \n", g_file_get_path (file));
+            g_printf ("event deleted: %s \n", fname);
             break;
         case G_FILE_MONITOR_EVENT_CREATED:
-            g_printf ("event created: %s \n", g_file_get_path (file));
+            g_printf ("event created: %s \n", fname);
             scan_dir (g_file_get_path (file));
             break;
         case G_FILE_MONITOR_EVENT_ATTRIBUTE_CHANGED:
-            g_printf ("event changed: %s \n", g_file_get_path (file));
+            g_printf ("event changed: %s \n", fname);
             break;
 
         case G_FILE_MONITOR_EVENT_MOVED:
-            g_printf ("event moved: %s  old: %s\n", g_file_get_path (file), g_file_get_path (other_file));
-            break;
+            gchar foldname = g_file_get_path (other_file);
 
+            g_printf ("event moved: %s  old: %s\n", fname, foldname);
+            g_free (foldname);
+            break;
     }
+    g_free (fname);
 }
 
 static int install_watch (const char *dir_path)
@@ -103,7 +109,7 @@ int scan_dir (const char *dir_path)
     int ret;
 
     if (lstat (dir_path, &st) == -1) {
-        fprintf (stderr, "Failed to stat file: %s\n", dir_path);
+        perror ("stat(): ");
         return -1;
     }
     
@@ -112,7 +118,7 @@ int scan_dir (const char *dir_path)
 
     dir = opendir (dir_path);
     if (!dir) {
-        perror ("opendir: ");
+        perror ("opendir(): ");
         return -1;
     }
 
