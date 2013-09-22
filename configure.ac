@@ -2,33 +2,17 @@ AC_PREREQ(2.61)
 AC_INIT([fs_mon], [0.1], [paul.ionkin@gmail.com])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE([no-define foreign subdir-objects])
-AC_USE_SYSTEM_EXTENSIONS
-AC_DEFINE(_GNU_SOURCE)
-AC_PROG_MAKE_SET
+AM_INIT_AUTOMAKE
+AC_CONFIG_HEADERS([config.h]) 
 
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_INSTALL
-AC_PROG_LN_S
-AC_CHECK_SIZEOF(long int)
-AC_C_CONST
-AC_C_INLINE
-AC_LANG(C)
+PKG_PROG_PKG_CONFIG
 
-AC_ARG_WITH([fam],
-			[  --with-fam=<path>      prefix of fam installation (eg /usr/local)],
-		[case "${withval}" in
-			  yes) with_fam="/usr";;
-			  no)  with_fam="no";;
-			  *)   with_fam="/usr";;
-			 esac],
-			 [with_fam="/usr"])
+PKG_CHECK_MODULES([DEPS], [glib-2.0 >= 2.22 gobject-2.0 gio-2.0 >= 0.9])
 
-	CFLAGS="$CFLAGS -I $with_fam/include"
-	LDFLAGS="$LDFLAGS -L $with_fam/lib"
-	AC_CHECK_HEADERS(fam.h, AC_SEARCH_LIBS([FAMOpen], [fam]),
-        AC_MSG_WARN([*** fam.h not found -- consider using --with-fam]))
+
 
 # check if we should enable verbose debugging 
 AC_ARG_ENABLE(debug-mode,
@@ -40,6 +24,5 @@ else
     CFLAGS="-O2"
 fi
 
-AC_CONFIG_HEADERS([config.h]) 
-AC_CONFIG_FILES([Makefile, tests/Makefile])
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
